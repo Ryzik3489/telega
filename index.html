@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TG Clone | Vercel</title>
+    <style>
+        :root {
+            --bg-color: #0e1621;
+            --sidebar-bg: #17212b;
+            --msg-in: #182533;
+            --msg-out: #2b5278;
+            --accent: #4ea4f5;
+            --text: #ffffff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text); height: 100vh; overflow: hidden; }
+
+        .app-container { display: flex; height: 100vh; width: 100vw; }
+
+        /* Sidebar */
+        .sidebar { width: 320px; background: var(--sidebar-bg); border-right: 1px solid rgba(0,0,0,0.2); display: flex; flex-direction: column; }
+        .sidebar-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--bg-color); }
+        .chat-item { padding: 15px; background: #2b5278; cursor: pointer; }
+
+        /* Main Chat */
+        .chat-main { flex: 1; display: flex; flex-direction: column; position: relative; }
+        .chat-header { padding: 10px 20px; background: var(--sidebar-bg); box-shadow: 0 1px 2px rgba(0,0,0,0.3); z-index: 10; }
+        
+        .messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 8px; background: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); }
+        
+        .message { max-width: 75%; padding: 6px 12px; border-radius: 12px; font-size: 15px; position: relative; min-width: 80px; }
+        .msg-in { align-self: flex-start; background: var(--msg-in); border-bottom-left-radius: 4px; }
+        .msg-out { align-self: flex-end; background: var(--msg-out); border-bottom-right-radius: 4px; }
+        
+        .msg-user { font-weight: bold; font-size: 13px; color: var(--accent); margin-bottom: 2px; display: block; }
+        .msg-time { font-size: 10px; color: rgba(255,255,255,0.5); float: right; margin-top: 5px; margin-left: 8px; }
+
+        /* Input Area */
+        .input-area { padding: 10px 20px; background: var(--sidebar-bg); display: flex; align-items: center; gap: 15px; }
+        input[type="text"] { flex: 1; background: var(--bg-color); border: none; padding: 12px; color: white; border-radius: 8px; outline: none; }
+        #sendBtn { color: var(--accent); font-weight: bold; cursor: pointer; border: none; background: none; font-size: 16px; }
+
+        /* Auth */
+        #auth-overlay { position: fixed; inset: 0; background: var(--bg-color); z-index: 1000; display: flex; justify-content: center; align-items: center; }
+        .auth-card { background: var(--sidebar-bg); padding: 40px; border-radius: 12px; width: 340px; text-align: center; }
+        .auth-card input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; background: var(--bg-color); color: white; }
+        .auth-card button { width: 100%; padding: 12px; background: var(--msg-out); color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div id="auth-overlay">
+        <div class="auth-card">
+            <h2>Telegram Clone</h2>
+            <p style="font-size: 12px; color: #888; margin-bottom: 20px;">Введите любые данные для входа</p>
+            <input type="email" id="email" placeholder="Email (например test@test.com)">
+            <input type="password" id="password" placeholder="Пароль">
+            <button id="loginBtn">ВОЙТИ / СОЗДАТЬ</button>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <span>Чаты</span>
+                <button id="logoutBtn" style="background:none; border:none; color:#888; cursor:pointer;">Выход</button>
+            </div>
+            <div class="chat-item"><strong>Общий чат</strong></div>
+        </aside>
+
+        <main class="chat-main">
+            <header class="chat-header"><b>Общий чат</b></header>
+            <div class="messages" id="message-container"></div>
+            <div class="input-area">
+                <input type="text" id="messageInput" placeholder="Написать сообщение..." autocomplete="off">
+                <button id="sendBtn">ОТПРАВИТЬ</button>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // ТВОИ КЛЮЧИ FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyAbBIPW5RaaBQYBmlXhVVBV0606QKBvJng",
+            authDomain: "telega-85cca.firebaseapp.com",
+            databaseURL: "https://telega-85cca-default-rtdb.firebaseio.com",
+            projectId: "telega-85cca",
+            appId: "1:213088586635:web:5ee9a8985a9fb5403f7d8e"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        const authOverlay = document.getElementById('auth-overlay');
+        const msgContainer = document.getElementById('message-container');
+        const msgInput = document.getElementById('messageInput');
+
+        // Логин
+        document.getElementById('loginBtn').onclick = async () => {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('password').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch (e) {
+                try {
+                    await createUserWithEmailAndPassword(auth, email, pass);
+                } catch (err) { alert("Ошибка: " + err.message); }
+            }
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                authOverlay.style.display = 'none';
+                msgInput.focus();
+                loadMessages();
+            } else {
+                authOverlay.style.display = 'flex';
+            }
+        });
+
+        document.getElementById('logoutBtn').onclick = () => signOut(auth);
+
+        // Отправка
+        const sendMessage = () => {
+            if (!msgInput.value.trim()) return;
+            push(ref(db, 'messages'), {
+                user: auth.currentUser.email.split('@')[0],
+                text: msgInput.value,
+                uid: auth.currentUser.uid,
+                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            });
+            msgInput.value = "";
+        };
+
+        document.getElementById('sendBtn').onclick = sendMessage;
+        msgInput.onkeypress = (e) => { if(e.key === 'Enter') sendMessage(); };
+
+        // Загрузка
+        function loadMessages() {
+            msgContainer.innerHTML = '';
+            onChildAdded(ref(db, 'messages'), (data) => {
+                const msg = data.val();
+                const isMine = msg.uid === auth.currentUser.uid;
+                const div = document.createElement('div');
+                div.className = `message ${isMine ? 'msg-out' : 'msg-in'}`;
+                div.innerHTML = `
+                    ${!isMine ? `<span class="msg-user">${msg.user}</span>` : ''}
+                    ${msg.text}
+                    <span class="msg-time">${msg.time || ''}</span>
+                `;
+                msgContainer.appendChild(div);
+                msgContainer.scrollTop = msgContainer.scrollHeight;
+            });
+        }
+    </script>
+</body>
+</html>
