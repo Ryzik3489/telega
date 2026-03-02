@@ -3,162 +3,223 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TG Clone | Vercel</title>
+    <title>TG Ultimate Clone</title>
     <style>
-        :root {
-            --bg-color: #0e1621;
-            --sidebar-bg: #17212b;
-            --msg-in: #182533;
-            --msg-out: #2b5278;
-            --accent: #4ea4f5;
-            --text: #ffffff;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text); height: 100vh; overflow: hidden; }
-
-        .app-container { display: flex; height: 100vh; width: 100vw; }
+        :root { --bg: #0e1621; --side: #17212b; --msg-in: #182533; --msg-out: #2b5278; --accent: #4ea4f5; --text: #fff; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text); height: 100vh; display: flex; overflow: hidden; }
 
         /* Sidebar */
-        .sidebar { width: 320px; background: var(--sidebar-bg); border-right: 1px solid rgba(0,0,0,0.2); display: flex; flex-direction: column; }
-        .sidebar-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--bg-color); }
-        .chat-item { padding: 15px; background: #2b5278; cursor: pointer; }
-
-        /* Main Chat */
-        .chat-main { flex: 1; display: flex; flex-direction: column; position: relative; }
-        .chat-header { padding: 10px 20px; background: var(--sidebar-bg); box-shadow: 0 1px 2px rgba(0,0,0,0.3); z-index: 10; }
+        .sidebar { width: 300px; background: var(--side); border-right: 1px solid #080d14; display: flex; flex-direction: column; z-index: 10; }
+        .search-box { padding: 15px; border-bottom: 1px solid var(--bg); }
+        .search-box input { width: 100%; padding: 10px; border-radius: 8px; border: none; background: var(--bg); color: #fff; outline: none; }
         
-        .messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 8px; background: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); }
-        
-        .message { max-width: 75%; padding: 6px 12px; border-radius: 12px; font-size: 15px; position: relative; min-width: 80px; }
-        .msg-in { align-self: flex-start; background: var(--msg-in); border-bottom-left-radius: 4px; }
-        .msg-out { align-self: flex-end; background: var(--msg-out); border-bottom-right-radius: 4px; }
-        
-        .msg-user { font-weight: bold; font-size: 13px; color: var(--accent); margin-bottom: 2px; display: block; }
-        .msg-time { font-size: 10px; color: rgba(255,255,255,0.5); float: right; margin-top: 5px; margin-left: 8px; }
+        .list-section { flex: 1; overflow-y: auto; }
+        .list-item { padding: 15px; cursor: pointer; border-bottom: 1px solid #0e1621; transition: 0.2s; }
+        .list-item:hover { background: #242f3d; }
+        .list-item.active { background: #2b5278; }
+        .list-item strong { display: block; font-size: 15px; }
+        .list-item small { color: #888; font-size: 12px; }
 
-        /* Input Area */
-        .input-area { padding: 10px 20px; background: var(--sidebar-bg); display: flex; align-items: center; gap: 15px; }
-        input[type="text"] { flex: 1; background: var(--bg-color); border: none; padding: 12px; color: white; border-radius: 8px; outline: none; }
-        #sendBtn { color: var(--accent); font-weight: bold; cursor: pointer; border: none; background: none; font-size: 16px; }
+        /* Chat Area */
+        .chat-area { flex: 1; display: flex; flex-direction: column; position: relative; }
+        .chat-header { padding: 15px 20px; background: var(--side); font-weight: bold; border-bottom: 1px solid #000; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 8px; background: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-color: #0e1621; }
+        
+        .message { max-width: 70%; padding: 8px 12px; border-radius: 12px; font-size: 14px; line-height: 1.4; position: relative; }
+        .m-in { align-self: flex-start; background: var(--msg-in); border-bottom-left-radius: 2px; }
+        .m-out { align-self: flex-end; background: var(--msg-out); border-bottom-right-radius: 2px; }
+        .m-user { color: var(--accent); font-weight: bold; font-size: 12px; margin-bottom: 3px; display: block; }
+        .m-time { font-size: 10px; opacity: 0.5; float: right; margin-left: 8px; margin-top: 4px; }
 
-        /* Auth */
-        #auth-overlay { position: fixed; inset: 0; background: var(--bg-color); z-index: 1000; display: flex; justify-content: center; align-items: center; }
-        .auth-card { background: var(--sidebar-bg); padding: 40px; border-radius: 12px; width: 340px; text-align: center; }
-        .auth-card input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; background: var(--bg-color); color: white; }
-        .auth-card button { width: 100%; padding: 12px; background: var(--msg-out); color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px; }
+        .input-bar { padding: 15px; background: var(--side); display: flex; gap: 12px; align-items: center; }
+        .input-bar input { flex: 1; padding: 12px; border-radius: 8px; border: none; background: var(--bg); color: #fff; outline: none; }
+        .send-btn { color: var(--accent); font-weight: bold; cursor: pointer; border: none; background: none; font-size: 14px; }
+
+        /* Auth Screen */
+        #auth-screen { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; justify-content: center; align-items: center; }
+        .auth-card { background: var(--side); padding: 40px; border-radius: 15px; width: 350px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .auth-card input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; background: var(--bg); color: #fff; }
+        .auth-card button { width: 100%; padding: 12px; background: var(--accent); border: none; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div id="auth-overlay">
-        <div class="auth-card">
-            <h2>Telegram Clone</h2>
-            <p style="font-size: 12px; color: #888; margin-bottom: 20px;">Введите любые данные для входа</p>
-            <input type="email" id="email" placeholder="Email (например test@test.com)">
-            <input type="password" id="password" placeholder="Пароль">
-            <button id="loginBtn">ВОЙТИ / СОЗДАТЬ</button>
+<div id="auth-screen">
+    <div class="auth-card">
+        <h2 style="margin-bottom: 10px;">Telegram Clone</h2>
+        <p style="color: #888; font-size: 14px; margin-bottom: 20px;">Введите email и любой пароль</p>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Пароль">
+        <button id="loginBtn">ВОЙТИ / СОЗДАТЬ АККАУНТ</button>
+    </div>
+</div>
+
+<aside class="sidebar">
+    <div class="search-box">
+        <input type="text" id="globalSearch" placeholder="Поиск людей (email)...">
+    </div>
+    <div class="list-section" id="sidebar-list">
+        </div>
+</aside>
+
+<main class="chat-area">
+    <div class="chat-header" id="chat-title">Общий чат</div>
+    <div class="messages" id="msg-container"></div>
+    <div class="input-area">
+        <div class="input-bar">
+            <input type="text" id="msgInput" placeholder="Написать сообщение..." autocomplete="off">
+            <button class="send-btn" id="sendBtn">ОТПРАВИТЬ</button>
         </div>
     </div>
+</main>
 
-    <div class="app-container">
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <span>Чаты</span>
-                <button id="logoutBtn" style="background:none; border:none; color:#888; cursor:pointer;">Выход</button>
-            </div>
-            <div class="chat-item"><strong>Общий чат</strong></div>
-        </aside>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getDatabase, ref, push, onChildAdded, set, get, child, off } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        <main class="chat-main">
-            <header class="chat-header"><b>Общий чат</b></header>
-            <div class="messages" id="message-container"></div>
-            <div class="input-area">
-                <input type="text" id="messageInput" placeholder="Написать сообщение..." autocomplete="off">
-                <button id="sendBtn">ОТПРАВИТЬ</button>
-            </div>
-        </main>
-    </div>
+    const firebaseConfig = {
+        apiKey: "AIzaSyAbBIPW5RaaBQYBmlXhVVBV0606QKBvJng",
+        authDomain: "telega-85cca.firebaseapp.com",
+        databaseURL: "https://telega-85cca-default-rtdb.firebaseio.com",
+        projectId: "telega-85cca",
+        appId: "1:213088586635:web:5ee9a8985a9fb5403f7d8e"
+    };
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
 
-        // ТВОИ КЛЮЧИ FIREBASE
-        const firebaseConfig = {
-            apiKey: "AIzaSyAbBIPW5RaaBQYBmlXhVVBV0606QKBvJng",
-            authDomain: "telega-85cca.firebaseapp.com",
-            databaseURL: "https://telega-85cca-default-rtdb.firebaseio.com",
-            projectId: "telega-85cca",
-            appId: "1:213088586635:web:5ee9a8985a9fb5403f7d8e"
-        };
+    let currentChatId = 'global';
+    let currentChatType = 'global'; 
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getDatabase(app);
-
-        const authOverlay = document.getElementById('auth-overlay');
-        const msgContainer = document.getElementById('message-container');
-        const msgInput = document.getElementById('messageInput');
-
-        // Логин
-        document.getElementById('loginBtn').onclick = async () => {
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('password').value;
+    // 1. АУТЕНТИФИКАЦИЯ
+    document.getElementById('loginBtn').onclick = async () => {
+        const email = document.getElementById('email').value;
+        const pass = document.getElementById('password').value;
+        if(!email || !pass) return alert("Заполните поля");
+        
+        try {
+            const res = await signInWithEmailAndPassword(auth, email, pass);
+            await saveProfile(res.user);
+        } catch (e) {
             try {
-                await signInWithEmailAndPassword(auth, email, pass);
-            } catch (e) {
-                try {
-                    await createUserWithEmailAndPassword(auth, email, pass);
-                } catch (err) { alert("Ошибка: " + err.message); }
-            }
-        };
-
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                authOverlay.style.display = 'none';
-                msgInput.focus();
-                loadMessages();
-            } else {
-                authOverlay.style.display = 'flex';
-            }
-        });
-
-        document.getElementById('logoutBtn').onclick = () => signOut(auth);
-
-        // Отправка
-        const sendMessage = () => {
-            if (!msgInput.value.trim()) return;
-            push(ref(db, 'messages'), {
-                user: auth.currentUser.email.split('@')[0],
-                text: msgInput.value,
-                uid: auth.currentUser.uid,
-                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-            });
-            msgInput.value = "";
-        };
-
-        document.getElementById('sendBtn').onclick = sendMessage;
-        msgInput.onkeypress = (e) => { if(e.key === 'Enter') sendMessage(); };
-
-        // Загрузка
-        function loadMessages() {
-            msgContainer.innerHTML = '';
-            onChildAdded(ref(db, 'messages'), (data) => {
-                const msg = data.val();
-                const isMine = msg.uid === auth.currentUser.uid;
-                const div = document.createElement('div');
-                div.className = `message ${isMine ? 'msg-out' : 'msg-in'}`;
-                div.innerHTML = `
-                    ${!isMine ? `<span class="msg-user">${msg.user}</span>` : ''}
-                    ${msg.text}
-                    <span class="msg-time">${msg.time || ''}</span>
-                `;
-                msgContainer.appendChild(div);
-                msgContainer.scrollTop = msgContainer.scrollHeight;
-            });
+                const res = await createUserWithEmailAndPassword(auth, email, pass);
+                await saveProfile(res.user);
+            } catch (err) { alert(err.message); }
         }
-    </script>
+    };
+
+    async function saveProfile(user) {
+        await set(ref(db, 'users/' + user.uid), {
+            username: user.email.split('@')[0],
+            uid: user.uid,
+            email: user.email
+        });
+    }
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            document.getElementById('auth-screen').classList.add('hidden');
+            renderSidebar();
+            switchChat('global', 'global', '🌍 Общий чат');
+        }
+    });
+
+    // 2. ПОИСК И СПИСОК
+    async function renderSidebar(results = null) {
+        const list = document.getElementById('sidebar-list');
+        list.innerHTML = '';
+
+        if (results) {
+            results.forEach(u => {
+                const item = createListItem(`@${u.username}`, 'Написать личное сообщение', () => {
+                    const chatId = [auth.currentUser.uid, u.uid].sort().join('_');
+                    switchChat(chatId, 'private', `@${u.username}`);
+                });
+                list.appendChild(item);
+            });
+            return;
+        }
+
+        list.appendChild(createListItem('🌍 Общий чат', 'Все пользователи проекта', () => switchChat('global', 'global', 'Общий чат')));
+        list.appendChild(createListItem('📢 Канал (Test)', 'Только чтение', () => alert('В разработке')));
+    }
+
+    function createListItem(title, sub, onClick) {
+        const div = document.createElement('div');
+        div.className = 'list-item';
+        div.innerHTML = `<strong>${title}</strong><small>${sub}</small>`;
+        div.onclick = onClick;
+        return div;
+    }
+
+    document.getElementById('globalSearch').oninput = async (e) => {
+        const val = e.target.value.toLowerCase();
+        if (val.length < 2) { renderSidebar(); return; }
+        
+        const snapshot = await get(child(ref(db), 'users'));
+        const found = [];
+        snapshot.forEach(s => {
+            const u = s.val();
+            if (u.username.includes(val) && u.uid !== auth.currentUser.uid) found.push(u);
+        });
+        renderSidebar(found);
+    };
+
+    // 3. ЧАТ И СООБЩЕНИЯ
+    function switchChat(id, type, title) {
+        currentChatId = id;
+        currentChatType = type;
+        document.getElementById('chat-title').innerText = title;
+        document.getElementById('msg-container').innerHTML = '';
+        
+        // Отписываемся от старого слушателя и подписываемся на новый
+        const path = type === 'global' ? 'messages/global' : `messages/private/${id}`;
+        off(ref(db, path));
+        listenMessages(path);
+    }
+
+    function listenMessages(path) {
+        onChildAdded(ref(db, path), (data) => {
+            const m = data.val();
+            displayMessage(m);
+        });
+    }
+
+    function displayMessage(m) {
+        const container = document.getElementById('msg-container');
+        const isMine = m.uid === auth.currentUser.uid;
+        const div = document.createElement('div');
+        div.className = `message ${isMine ? 'm-out' : 'm-in'}`;
+        div.innerHTML = `
+            ${!isMine ? `<span class="m-user">${m.sender}</span>` : ''}
+            ${m.text}
+            <span class="m-time">${m.time}</span>
+        `;
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    document.getElementById('sendBtn').onclick = sendMessage;
+    document.getElementById('msgInput').onkeypress = (e) => e.key === 'Enter' && sendMessage();
+
+    function sendMessage() {
+        const text = document.getElementById('msgInput').value;
+        if (!text.trim()) return;
+
+        const path = currentChatType === 'global' ? 'messages/global' : `messages/private/${currentChatId}`;
+        push(ref(db, path), {
+            sender: auth.currentUser.email.split('@')[0],
+            uid: auth.currentUser.uid,
+            text: text,
+            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+        });
+        document.getElementById('msgInput').value = '';
+    }
+</script>
 </body>
 </html>
